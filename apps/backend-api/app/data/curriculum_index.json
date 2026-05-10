@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "default_major_by_cohort": {
+    "k21": "cs",
+    "k22": "cs",
+    "k23": "cs",
+    "k24": "ne"
+  },
+  "curricula": {
+    "cs:k21": "cs_k21_rules.json",
+    "cs:k22": "cs_k21_rules.json",
+    "cs:k23": "cs_k23_rules.json",
+    "cs:k24": "cs_k24_rules.json",
+    "ne:k21": "ne_k21_rules.json",
+    "ne:k23": "ne_k23_rules.json",
+    "ne:k24": "ne_k24_rules.json"
+  }
+}

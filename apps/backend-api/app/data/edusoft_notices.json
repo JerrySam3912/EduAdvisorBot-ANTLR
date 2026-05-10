@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "source_url": "https://edusoftweb.hcmiu.edu.vn/default.aspx?page=chitietthongtin&id=1613",
+  "notices": [
+    {
+      "notice_id": "edusoft-drop-2025-2026-hk3-update-04052026",
+      "title": "THÔNG BÁO THỜI GIAN ĐIỀU CHỈNH ĐĂNG KÝ MÔN HỌC - HỌC KỲ III, NĂM HỌC 2025-2026",
+      "semester": "HKIII-2025-2026",
+      "start_date": "2026-05-11",
+      "end_date": "2026-05-14",
+      "time_windows": [
+        {
+          "from": "08:00",
+          "to": "24:00",
+          "days": ["2026-05-11", "2026-05-12", "2026-05-13"]
+        },
+        {
+          "from": "08:00",
+          "to": "13:00",
+          "days": ["2026-05-14"]
+        }
+      ],
+      "format": "online",
+      "applies_to": "all_students_including_k2025",
+      "notes": [
+        "Students on K2024 extended classes in semester 2 are not allowed to adjust registration for semester 3.",
+        "Students on temporary suspension must submit return application before 2026-05-07.",
+        "PT001IU opens as TABLE TENNIS.",
+        "PT002IU opens as PICKLEBALL.",
+        "MP001IU has special registration rules."
+      ]
+    }
+  ]
+}

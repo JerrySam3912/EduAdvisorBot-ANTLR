@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "source_of_truth": "CS-K23.md",
+  "major": "cs",
+  "cohort": "k23",
+  "relationship_convention": {
+    "prerequisites": "must_pass_before_taking_target_course",
+    "previous": "must_have_taken_before_taking_target_course",
+    "co_requisite": "can_be_taken_in_same_term"
+  },
+  "courses": [
+    {"course_code": "MA001IU", "course_name": "Calculus 1", "prerequisites": [], "previous": [], "co_requisites": []},
+    {"course_code": "MA003IU", "course_name": "Calculus 2", "prerequisites": ["MA001IU"], "previous": [], "co_requisites": []},
+    {"course_code": "MA026IU", "course_name": "Probability, Statistic & Random Process", "prerequisites": ["MA003IU"], "previous": [], "co_requisites": []},
+    {"course_code": "PH013IU", "course_name": "Physics 1", "prerequisites": [], "previous": [], "co_requisites": []},
+    {"course_code": "PH015IU", "course_name": "Physics 3", "prerequisites": ["PH013IU"], "previous": [], "co_requisites": ["PH016IU"]},
+    {"course_code": "PH016IU", "course_name": "Physics 3 Laboratory", "prerequisites": [], "previous": [], "co_requisites": ["PH015IU"]},
+    {"course_code": "IT116IU", "course_name": "C/C++ Programming", "prerequisites": [], "previous": [], "co_requisites": []},
+    {"course_code": "IT069IU", "course_name": "Object-Oriented Programming", "prerequisites": ["IT116IU"], "previous": [], "co_requisites": []},
+    {"course_code": "IT153IU", "course_name": "Discrete Mathematics", "prerequisites": ["IT116IU"], "previous": [], "co_requisites": []},
+    {"course_code": "IT079IU", "course_name": "Principles of Database Management", "prerequisites": [], "previous": ["IT116IU"], "co_requisites": []},
+    {"course_code": "IT091IU", "course_name": "Computer Networks", "prerequisites": [], "previous": ["IT116IU"], "co_requisites": []},
+    {"course_code": "IT093IU", "course_name": "Web Application Development", "prerequisites": ["IT069IU", "IT079IU"], "previous": [], "co_requisites": []},
+    {"course_code": "IT013IU", "course_name": "Algorithms and Data Structures", "prerequisites": [], "previous": ["IT069IU"], "co_requisites": []},
+    {"course_code": "IT017IU", "course_name": "Operating System", "prerequisites": ["IT013IU", "IT089IU"], "previous": [], "co_requisites": []},
+    {"course_code": "IT089IU", "course_name": "Computer Architecture", "prerequisites": ["IT067IU"], "previous": [], "co_requisites": []},
+    {"course_code": "IT067IU", "course_name": "Digital Logic Design", "prerequisites": [], "previous": [], "co_requisites": ["IT099IU"]},
+    {"course_code": "IT099IU", "course_name": "Digital Logic Design Laboratory", "prerequisites": [], "previous": [], "co_requisites": ["IT067IU"]},
+    {"course_code": "IT159IU", "course_name": "Artificial Intelligence", "prerequisites": [], "previous": ["IT153IU"], "co_requisites": []},
+    {"course_code": "IT094IU", "course_name": "Information System Management", "prerequisites": [], "previous": ["IT079IU"], "co_requisites": []},
+    {"course_code": "IT096IU", "course_name": "Net-Centric Programming", "prerequisites": [], "previous": ["IT091IU"], "co_requisites": []},
+    {"course_code": "PE015IU", "course_name": "Philosophy Marx – Lenin", "prerequisites": [], "previous": [], "co_requisites": ["PE016IU"]},
+    {"course_code": "PE016IU", "course_name": "Marxist – Leninist Political Economy", "prerequisites": [], "previous": [], "co_requisites": ["PE015IU"]},
+    {"course_code": "PE017IU", "course_name": "Scientific Socialism", "prerequisites": [], "previous": ["PE016IU"], "co_requisites": []},
+    {"course_code": "PE018IU", "course_name": "History of Vietnamese Communist Party", "prerequisites": [], "previous": ["PE017IU"], "co_requisites": []},
+    {"course_code": "PE019IU", "course_name": "Ho Chi Minh's Thoughts", "prerequisites": [], "previous": ["PE017IU"], "co_requisites": []},
+    {"course_code": "IT120IU", "course_name": "Entrepreneurship", "prerequisites": [], "previous": [], "co_requisites": []},
+    {"course_code": "IT083IU", "course_name": "Special Study of the Field", "prerequisites": [], "previous": [], "co_requisites": []},
+    {"course_code": "IT058IU", "course_name": "Thesis", "prerequisites": [], "previous": ["IT083IU"], "co_requisites": []}
+  ],
+  "notes": ["Derived from CS-K23.md for backend runtime consumption."]
+}
