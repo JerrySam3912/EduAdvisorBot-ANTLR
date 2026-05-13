@@ -2,7 +2,6 @@ from app.nlp.intents import (
     ASK_COURSE_ELIGIBILITY,
     ASK_COURSE_REQUIREMENTS,
     ASK_DROP_TIME,
-    ASK_INSTRUCTOR,
     ASK_REGISTRATION_PLATFORM,
     ASK_REGISTRATION_TIME,
     UNKNOWN,
@@ -34,24 +33,31 @@ class CommandProcessor:
                 return self._handle_drop_time(text=text, slots=slots, course_code=course_code)
             if intent == ASK_REGISTRATION_PLATFORM:
                 return self._handle_registration_platform(text=text, slots=slots, course_code=course_code)
-            if intent == ASK_INSTRUCTOR:
-                return self._handle_instructor(text=text, slots=slots, course_code=course_code)
             return self._handle_course_query(text=text, slots=slots, course_code=course_code)
 
-        if intent in {ASK_REGISTRATION_TIME, ASK_DROP_TIME, ASK_REGISTRATION_PLATFORM, ASK_INSTRUCTOR, ASK_COURSE_ELIGIBILITY, ASK_COURSE_REQUIREMENTS}:
-            return self._handle_missing_course_slot(intent=intent, slots=slots)
+        if intent in {ASK_REGISTRATION_TIME, ASK_DROP_TIME, ASK_REGISTRATION_PLATFORM, ASK_COURSE_ELIGIBILITY, ASK_COURSE_REQUIREMENTS}:
+            return self._handle_missing_course_slot(intent=intent, slots=slots, text=text)
 
         return self._build_response(
             intent=UNKNOWN,
             confidence=0.35,
-            reply="Mình hiện hỗ trợ hỏi về môn học, đăng ký môn, drop môn, giảng viên và điều kiện học. Ví dụ: 'IT094IU cần học gì trước?'.",
+            reply="Mình hiện hỗ trợ hỏi về môn học, đăng ký môn, drop môn và điều kiện học. Ví dụ: 'IT094IU cần học gì trước?'.",
             slots={},
             missing_slots=[],
             follow_up_question="Bạn muốn hỏi về môn nào?",
             data=None,
         )
 
-    def _handle_missing_course_slot(self, *, intent: str, slots: dict) -> dict:
+    def _handle_missing_course_slot(self, *, intent: str, slots: dict, text: str) -> dict:
+        recovered_course = self.curriculum_service.resolve_course_by_name(
+            major=self._infer_major_from_cohort(slots.get("cohort") or slots.get("cohort_from_student_id") or "k21"),
+            cohort=slots.get("cohort") or slots.get("cohort_from_student_id") or "k21",
+            user_text=text,
+        )
+        if recovered_course:
+            recovered_code = str(recovered_course.get("course_code", "")).upper()
+            return self._route_with_course_code(intent=intent, text=text, slots=slots, course_code=recovered_code)
+
         missing_slots = ["course_code"]
         if not (slots.get("student_id") or slots.get("cohort")) and intent == ASK_COURSE_ELIGIBILITY:
             missing_slots.append("student_id_or_cohort")
@@ -65,8 +71,6 @@ class CommandProcessor:
             question = "Bạn cho mình mã môn và kỳ học để mình tra thời gian drop nhé."
         elif intent == ASK_REGISTRATION_PLATFORM:
             question = "Bạn cho mình mã môn để mình tra nền tảng đăng ký nhé."
-        elif intent == ASK_INSTRUCTOR:
-            question = "Bạn cho mình mã môn để mình tra giảng viên nhé."
 
         return self._build_response(
             intent=intent,
@@ -78,10 +82,27 @@ class CommandProcessor:
             data=None,
         )
 
+    def _route_with_course_code(self, *, intent: str, text: str, slots: dict, course_code: str) -> dict:
+        if intent == ASK_COURSE_ELIGIBILITY:
+            return self._handle_course_eligibility(text=text, slots=slots, course_code=course_code)
+        if intent == ASK_REGISTRATION_TIME:
+            return self._handle_registration_time(text=text, slots=slots, course_code=course_code)
+        if intent == ASK_DROP_TIME:
+            return self._handle_drop_time(text=text, slots=slots, course_code=course_code)
+        if intent == ASK_REGISTRATION_PLATFORM:
+            return self._handle_registration_platform(text=text, slots=slots, course_code=course_code)
+        return self._handle_course_query(text=text, slots=slots, course_code=course_code)
+
     def _handle_course_query(self, *, text: str, slots: dict, course_code: str) -> dict:
         cohort = slots.get("cohort") or infer_cohort_from_student_id(slots.get("student_id")) or "k21"
         major = self._infer_major_from_cohort(cohort)
         course = self.repository.get_course(major=major, cohort=cohort, course_code=course_code)
+
+        if not course:
+            resolved_course = self.curriculum_service.resolve_course_by_name(major=major, cohort=cohort, user_text=text)
+            if resolved_course:
+                course_code = str(resolved_course.get("course_code", course_code))
+                course = resolved_course
 
         if not course:
             return self._build_response(
@@ -229,17 +250,6 @@ class CommandProcessor:
             missing_slots=[],
             follow_up_question=None,
             data={"platform": "university_registration_portal"},
-        )
-
-    def _handle_instructor(self, *, text: str, slots: dict, course_code: str) -> dict:
-        return self._build_response(
-            intent=ASK_INSTRUCTOR,
-            confidence=0.88,
-            reply=f"Mình hiện chưa có dữ liệu giảng viên cho môn {course_code}. Nếu bạn gửi syllabus hoặc danh sách lớp, mình có thể hỗ trợ tra tiếp.",
-            slots={"course_code": course_code, **slots},
-            missing_slots=[],
-            follow_up_question=None,
-            data=None,
         )
 
     @staticmethod

@@ -37,6 +37,13 @@ class CurriculumLoader:
             if file_name:
                 return file_name
 
+        # New cohort/major fallback rules: K22 reuses K21, and DS/IT-CE can reuse K21 when needed.
+        if cohort.lower() == "k22":
+            fallback_key = f"{major.lower()}:k21"
+            file_name = index.get("curricula", {}).get(fallback_key)
+            if file_name:
+                return file_name
+
         raise FileNotFoundError(f"No curriculum file configured for major={major}, cohort={cohort}")
 
     def load_curriculum(self, major: str, cohort: str) -> dict:

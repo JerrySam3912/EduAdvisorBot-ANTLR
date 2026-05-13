@@ -12,7 +12,6 @@ class ChatResponse(BaseModel):
     intent: str
     confidence: float = Field(ge=0.0, le=1.0)
     reply: str
-    # Keep this field for compatibility with current API consumers.
     message: str | None = None
     slots: dict = Field(default_factory=dict)
     missing_slots: list[str] = Field(default_factory=list)

@@ -18,7 +18,7 @@ COURSE_REQUIREMENT_PATTERNS = (
 )
 ELIGIBILITY_PATTERNS = (
     r"(ổn không|ok không|được không|eligible|eligibility|học được không|take this semester|semester này|có ổn không)",
-    r"(can i|can I|is it ok|am I eligible|có được không|học OOP sem 2|sem 2 này)",
+    r"(can i|can I|is it ok|am I eligible|có được không|học OOP sem 2|sem 2 này|môn này có học được không)",
 )
 REGISTRATION_TIME_PATTERNS = (
     r"(đăng ký|registration|register|enroll|adjust|điều chỉnh)",
@@ -31,10 +31,6 @@ DROP_TIME_PATTERNS = (
 REGISTRATION_PLATFORM_PATTERNS = (
     r"(website|web|cổng|portal|nền tảng|platform|làm ở đâu|where|đâu)",
     r"(đăng ký|registration|register|enroll)",
-)
-INSTRUCTOR_PATTERNS = (
-    r"(giảng viên|instructor|lecturer|teacher|phụ trách|advisor|ai dạy|ai day|dạy)",
-    r"(môn|course|subject|course code)",
 )
 
 
@@ -87,8 +83,6 @@ def classify_intent(text: str) -> str:
         return "ASK_REGISTRATION_PLATFORM"
     if any(re.search(p, lower) for p in REGISTRATION_TIME_PATTERNS):
         return "ASK_REGISTRATION_TIME"
-    if any(re.search(p, lower) for p in INSTRUCTOR_PATTERNS):
-        return "ASK_INSTRUCTOR"
     if any(re.search(p, lower) for p in ELIGIBILITY_PATTERNS):
         return "ASK_COURSE_ELIGIBILITY"
     if any(re.search(p, lower) for p in COURSE_REQUIREMENT_PATTERNS):
