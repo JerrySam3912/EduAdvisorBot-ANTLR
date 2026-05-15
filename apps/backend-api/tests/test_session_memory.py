@@ -9,6 +9,6 @@ def test_session_memory_reuses_last_course_code():
     first = service.handle_message(ChatRequest(message="IT094IU cần học gì trước?", session_id=session_id, student_id="ITCSIU22001"))
     second = service.handle_message(ChatRequest(message="môn này có học được không", session_id=session_id, student_id="ITCSIU22001"))
 
-    assert first.intent == "ASK_COURSE_REQUIREMENTS"
+    assert first.intent == "ASK_PREVIOUS_ONLY"
     assert second.intent == "ASK_COURSE_ELIGIBILITY"
     assert second.slots.get("course_code") == "IT094IU"

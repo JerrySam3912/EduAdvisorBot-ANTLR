@@ -17,12 +17,39 @@ class CourseQueryListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CourseQueryParser#greetingQuery.
+    def enterGreetingQuery(self, ctx:CourseQueryParser.GreetingQueryContext):
+        pass
+
+    # Exit a parse tree produced by CourseQueryParser#greetingQuery.
+    def exitGreetingQuery(self, ctx:CourseQueryParser.GreetingQueryContext):
+        pass
+
+
     # Enter a parse tree produced by CourseQueryParser#helpQuery.
     def enterHelpQuery(self, ctx:CourseQueryParser.HelpQueryContext):
         pass
 
     # Exit a parse tree produced by CourseQueryParser#helpQuery.
     def exitHelpQuery(self, ctx:CourseQueryParser.HelpQueryContext):
+        pass
+
+
+    # Enter a parse tree produced by CourseQueryParser#eligibilityQuery.
+    def enterEligibilityQuery(self, ctx:CourseQueryParser.EligibilityQueryContext):
+        pass
+
+    # Exit a parse tree produced by CourseQueryParser#eligibilityQuery.
+    def exitEligibilityQuery(self, ctx:CourseQueryParser.EligibilityQueryContext):
+        pass
+
+
+    # Enter a parse tree produced by CourseQueryParser#eligibleSuffix.
+    def enterEligibleSuffix(self, ctx:CourseQueryParser.EligibleSuffixContext):
+        pass
+
+    # Exit a parse tree produced by CourseQueryParser#eligibleSuffix.
+    def exitEligibleSuffix(self, ctx:CourseQueryParser.EligibleSuffixContext):
         pass
 
 
@@ -35,39 +62,48 @@ class CourseQueryListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CourseQueryParser#courseCodeOnly.
-    def enterCourseCodeOnly(self, ctx:CourseQueryParser.CourseCodeOnlyContext):
+    # Enter a parse tree produced by CourseQueryParser#prerequisiteQuery.
+    def enterPrerequisiteQuery(self, ctx:CourseQueryParser.PrerequisiteQueryContext):
         pass
 
-    # Exit a parse tree produced by CourseQueryParser#courseCodeOnly.
-    def exitCourseCodeOnly(self, ctx:CourseQueryParser.CourseCodeOnlyContext):
-        pass
-
-
-    # Enter a parse tree produced by CourseQueryParser#questionPrefix.
-    def enterQuestionPrefix(self, ctx:CourseQueryParser.QuestionPrefixContext):
-        pass
-
-    # Exit a parse tree produced by CourseQueryParser#questionPrefix.
-    def exitQuestionPrefix(self, ctx:CourseQueryParser.QuestionPrefixContext):
+    # Exit a parse tree produced by CourseQueryParser#prerequisiteQuery.
+    def exitPrerequisiteQuery(self, ctx:CourseQueryParser.PrerequisiteQueryContext):
         pass
 
 
-    # Enter a parse tree produced by CourseQueryParser#questionSuffix.
-    def enterQuestionSuffix(self, ctx:CourseQueryParser.QuestionSuffixContext):
+    # Enter a parse tree produced by CourseQueryParser#previousQuery.
+    def enterPreviousQuery(self, ctx:CourseQueryParser.PreviousQueryContext):
         pass
 
-    # Exit a parse tree produced by CourseQueryParser#questionSuffix.
-    def exitQuestionSuffix(self, ctx:CourseQueryParser.QuestionSuffixContext):
+    # Exit a parse tree produced by CourseQueryParser#previousQuery.
+    def exitPreviousQuery(self, ctx:CourseQueryParser.PreviousQueryContext):
         pass
 
 
-    # Enter a parse tree produced by CourseQueryParser#courseCode.
-    def enterCourseCode(self, ctx:CourseQueryParser.CourseCodeContext):
+    # Enter a parse tree produced by CourseQueryParser#courseInfoQuery.
+    def enterCourseInfoQuery(self, ctx:CourseQueryParser.CourseInfoQueryContext):
         pass
 
-    # Exit a parse tree produced by CourseQueryParser#courseCode.
-    def exitCourseCode(self, ctx:CourseQueryParser.CourseCodeContext):
+    # Exit a parse tree produced by CourseQueryParser#courseInfoQuery.
+    def exitCourseInfoQuery(self, ctx:CourseQueryParser.CourseInfoQueryContext):
+        pass
+
+
+    # Enter a parse tree produced by CourseQueryParser#dropQuery.
+    def enterDropQuery(self, ctx:CourseQueryParser.DropQueryContext):
+        pass
+
+    # Exit a parse tree produced by CourseQueryParser#dropQuery.
+    def exitDropQuery(self, ctx:CourseQueryParser.DropQueryContext):
+        pass
+
+
+    # Enter a parse tree produced by CourseQueryParser#registrationQuery.
+    def enterRegistrationQuery(self, ctx:CourseQueryParser.RegistrationQueryContext):
+        pass
+
+    # Exit a parse tree produced by CourseQueryParser#registrationQuery.
+    def exitRegistrationQuery(self, ctx:CourseQueryParser.RegistrationQueryContext):
         pass
 
 

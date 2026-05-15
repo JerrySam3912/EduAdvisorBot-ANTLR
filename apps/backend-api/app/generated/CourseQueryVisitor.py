@@ -14,8 +14,23 @@ class CourseQueryVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CourseQueryParser#greetingQuery.
+    def visitGreetingQuery(self, ctx:CourseQueryParser.GreetingQueryContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CourseQueryParser#helpQuery.
     def visitHelpQuery(self, ctx:CourseQueryParser.HelpQueryContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CourseQueryParser#eligibilityQuery.
+    def visitEligibilityQuery(self, ctx:CourseQueryParser.EligibilityQueryContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CourseQueryParser#eligibleSuffix.
+    def visitEligibleSuffix(self, ctx:CourseQueryParser.EligibleSuffixContext):
         return self.visitChildren(ctx)
 
 
@@ -24,23 +39,28 @@ class CourseQueryVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CourseQueryParser#courseCodeOnly.
-    def visitCourseCodeOnly(self, ctx:CourseQueryParser.CourseCodeOnlyContext):
+    # Visit a parse tree produced by CourseQueryParser#prerequisiteQuery.
+    def visitPrerequisiteQuery(self, ctx:CourseQueryParser.PrerequisiteQueryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CourseQueryParser#questionPrefix.
-    def visitQuestionPrefix(self, ctx:CourseQueryParser.QuestionPrefixContext):
+    # Visit a parse tree produced by CourseQueryParser#previousQuery.
+    def visitPreviousQuery(self, ctx:CourseQueryParser.PreviousQueryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CourseQueryParser#questionSuffix.
-    def visitQuestionSuffix(self, ctx:CourseQueryParser.QuestionSuffixContext):
+    # Visit a parse tree produced by CourseQueryParser#courseInfoQuery.
+    def visitCourseInfoQuery(self, ctx:CourseQueryParser.CourseInfoQueryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CourseQueryParser#courseCode.
-    def visitCourseCode(self, ctx:CourseQueryParser.CourseCodeContext):
+    # Visit a parse tree produced by CourseQueryParser#dropQuery.
+    def visitDropQuery(self, ctx:CourseQueryParser.DropQueryContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CourseQueryParser#registrationQuery.
+    def visitRegistrationQuery(self, ctx:CourseQueryParser.RegistrationQueryContext):
         return self.visitChildren(ctx)
 
 

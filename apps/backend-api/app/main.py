@@ -1,8 +1,4 @@
-
-from fastapi import FastAPI  
-
 from fastapi import FastAPI
-
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
@@ -19,10 +15,6 @@ def create_app() -> FastAPI:
     # Add cấu hình CORS để React gọi được API
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"], 
-
-    app.add_middleware(
-        CORSMiddleware,
         allow_origins=[
             "http://localhost:5173",
             "http://127.0.0.1:5173",
@@ -34,6 +26,6 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix=settings.api_v1_prefix)
     return app
-    )
+
 
 app = create_app()

@@ -3,6 +3,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+dist/
+build/
+*.whl
 .pytest_cache/
 .ruff_cache/
 
@@ -16,12 +20,12 @@ __pycache__/
 **/.env
 **/.env.*
 
-# Node (frontend)
-node_modules/
-.next/
-out/
-dist/
-build/
+# Frontend (edu-chatbot-fe)
+apps/edu-chatbot-fe/node_modules/
+apps/edu-chatbot-fe/dist/
+apps/edu-chatbot-fe/.svelte-kit/
+apps/edu-chatbot-fe/.env
+apps/edu-chatbot-fe/.env.*
 
 # IDE
 .vscode/
