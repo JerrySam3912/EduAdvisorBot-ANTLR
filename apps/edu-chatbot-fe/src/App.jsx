@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "./components/Header";
 import InputBox from "./components/InputBox";
 import MessageList from "./components/MessageList";
@@ -96,10 +96,7 @@ function App() {
     }
   };
 
-  const headerSubtitle = useMemo(() => {
-    if (!studentId) return undefined;
-    return `Đang tư vấn theo phiên hiện tại · ${studentId}`;
-  }, [studentId]);
+  const headerSubtitle = "Chatbot hỗ trợ tư vấn môn học, môn tiên quyết, thời gian drop môn";
 
   return (
     <div

@@ -33,14 +33,10 @@ class ChatService:
     @staticmethod
     def _extract_cohort_from_message(message: str) -> str | None:
         text = message.strip().lower()
-        if any(token in text for token in ("k21", "khóa 21", "khoa 21", "khóa21", "khoa21")):
-            return "k21"
-        if any(token in text for token in ("k22", "khóa 22", "khoa 22", "khóa22", "khoa22")):
-            return "k22"
-        if any(token in text for token in ("k23", "khóa 23", "khoa 23", "khóa23", "khoa23")):
-            return "k23"
-        if any(token in text for token in ("k24", "khóa 24", "khoa 24", "khóa24", "khoa24")):
-            return "k24"
+        # Extract ANY cohort from k10 to k99 (handles k19, k20, k25, etc.)
+        match = re.search(r"\bk(\d{2})\b", text)
+        if match:
+            return f"k{match.group(1)}"
         return None
 
     @staticmethod
@@ -199,7 +195,68 @@ class ChatService:
         explicit_cohort = slots.get("cohort") or inferred_cohort
 
         # ================================================================
-        # STEP 3: Update session memory with identity from message
+        # STEP 3: Validate cohort range — only k21–k24 supported
+        # ================================================================
+        def _is_cohort_in_range(cohort: str | None) -> bool:
+            if not cohort:
+                return True  # Unknown cohort passes through — handled later as missing info
+            try:
+                num = int(cohort.lower().replace("k", ""))
+                return 21 <= num <= 24
+            except (ValueError, AttributeError):
+                return True  # Invalid format passes through — handled later
+
+        if not _is_cohort_in_range(explicit_cohort):
+            return self._build_response(self._build_onboarding_response(
+                "Hiện tại mình chỉ có thể tư vấn cho các bạn sinh viên từ K21 đến K24 thôi nhé. "
+                "Tụi mình sẽ cập nhật thêm trong tương lai gần — mong bạn thông cảm!",
+                student_id=student_id,
+                cohort=explicit_cohort,
+                major=explicit_major,
+                missing_slots=["cohort_out_of_range"],
+            ))
+
+        if not _is_cohort_in_range(inferred_cohort):
+            return self._build_response(self._build_onboarding_response(
+                "Hiện tại mình chỉ có thể tư vấn cho các bạn sinh viên từ K21 đến K24 thôi nhé. "
+                "Tụi mình sẽ cập nhật thêm trong tương lai gần — mong bạn thông cảm!",
+                student_id=student_id,
+                cohort=inferred_cohort,
+                major=explicit_major,
+                missing_slots=["cohort_out_of_range"],
+            ))
+
+        # ================================================================
+        # STEP 4: Detect new student_id in current message and override memory
+        # This handles "cho mình hỏi về môn OOP với mssv ITCSIU22001" mid-session
+        # ================================================================
+        new_student_id_in_message = self._extract_student_id_from_message(payload.message)
+        explicit_new_student_id = None
+        if new_student_id_in_message and new_student_id_in_message != memory.last_student_id:
+            # New student_id in message → override memory for THIS request
+            explicit_new_student_id = new_student_id_in_message
+            student_id = explicit_new_student_id
+            # Derive cohort/major from the new student_id
+            from app.nlp.parser import (
+                extract_major_from_student_id as _extract_major_from_id,
+                infer_cohort_from_student_id as _infer_cohort_from_id,
+            )
+            explicit_major = _extract_major_from_id(explicit_new_student_id)
+            explicit_cohort = _infer_cohort_from_id(explicit_new_student_id)
+
+            # Validate new student_id's cohort range too
+            if not _is_cohort_in_range(explicit_cohort):
+                return self._build_response(self._build_onboarding_response(
+                    "Hiện tại mình chỉ có thể tư vấn cho các bạn sinh viên từ K21 đến K24 thôi nhé. "
+                    "Tụi mình sẽ cập nhật thêm trong tương lai gần — mong bạn thông cảm!",
+                    student_id=explicit_new_student_id,
+                    cohort=explicit_cohort,
+                    major=explicit_major,
+                    missing_slots=["cohort_out_of_range"],
+                ))
+
+        # ================================================================
+        # STEP 5: Update session memory with identity from message
         # ================================================================
         if memory:
             if student_id:
@@ -219,7 +276,20 @@ class ChatService:
                 slots["course_code"] = memory.last_course_code
 
         # ================================================================
-        # STEP 4: Run the NLP processor — ALWAYS, no matter what
+        # STEP 6: Validate cohort from memory — catches stale out-of-range cohorts
+        # ================================================================
+        if memory and memory.last_cohort and not _is_cohort_in_range(memory.last_cohort):
+            return self._build_response(self._build_onboarding_response(
+                "Hiện tại mình chỉ có thể tư vấn cho các bạn sinh viên từ K21 đến K24 thôi nhé. "
+                "Tụi mình sẽ cập nhật thêm trong tương lai gần — mong bạn thông cảm!",
+                student_id=memory.last_student_id,
+                cohort=memory.last_cohort,
+                major=memory.last_major,
+                missing_slots=["cohort_out_of_range"],
+            ))
+
+        # ================================================================
+        # STEP 7: Run the NLP processor — ALWAYS, no matter what
         # Inject memory defaults into slots BEFORE processor runs so that
         # the processor sees the full session context (cohort/major from memory),
         # enabling correct course lookup and identity-aware responses.
@@ -231,7 +301,12 @@ class ChatService:
             # Compute cohort/major from student_id for identity completeness check
             parsed_cohort_from_student_id = parsed["slots"].get("cohort_from_student_id")
             parsed_major_from_student_id = parsed["slots"].get("major_from_student_id")
-            memory_student_id = memory.last_student_id
+            # Use explicit values if user provided a new student_id in this message;
+            # otherwise fall back to memory. This ensures "cho mình hỏi với mssv X"
+            # mid-session overrides the previously stored identity for THIS request.
+            memory_student_id = explicit_new_student_id if explicit_new_student_id else memory.last_student_id
+            effective_cohort = explicit_cohort if explicit_new_student_id else memory.last_cohort
+            effective_major = explicit_major if explicit_new_student_id else memory.last_major
             if not parsed_cohort_from_student_id and memory_student_id:
                 parsed_cohort_from_student_id = infer_cohort_from_student_id(memory_student_id)
             if not parsed_major_from_student_id and memory_student_id:
@@ -240,13 +315,13 @@ class ChatService:
 
             processor_slots = {
                 "semester_code": memory.last_semester_code,
-                "cohort": memory.last_cohort,
+                "cohort": effective_cohort,
                 "cohort_from_text": None,
                 "cohort_from_student_id": parsed_cohort_from_student_id,
                 "major_from_student_id": parsed_major_from_student_id,
                 "student_id": memory_student_id,
-                "course_code": None,
-                "major": memory.last_major,
+                "course_code": parsed["slots"].get("course_code"),
+                "major": effective_major,
             }
 
             parsed_with_memory = {
@@ -263,7 +338,7 @@ class ChatService:
             result = self.processor.process(parsed)
 
         # ================================================================
-        # STEP 5: Update memory from processor result
+        # STEP 8: Update memory from processor result
         # ================================================================
         if memory:
             result_slots = dict(result.get("slots", {}))
@@ -292,16 +367,15 @@ class ChatService:
             result["slots"] = result_slots
 
         # ================================================================
-        # STEP 6: ONBOARDING — only if processor couldn't handle the query
-        # AND user hasn't provided enough identity info
+        # STEP 9: ONBOARDING — handle incomplete identity scenarios
         # ================================================================
         if result.get("intent") == "UNKNOWN":
             known_student = bool(memory.last_student_id) if memory else False
             known_cohort = bool(memory.last_cohort) if memory else False
             known_major = bool(memory.last_major) if memory else False
 
+            # Case A: No identity at all
             if not (known_student or known_cohort or known_major):
-                # Full onboarding needed
                 return self._build_response(self._build_onboarding_response(
                     "Bạn cho mình biết MSSV, hoặc tên ngành (NE/CE/CS/DS) và khóa (K21/K22/K23/K24) để mình tư vấn đúng chương trình nhé.",
                     student_id=student_id,
@@ -310,34 +384,79 @@ class ChatService:
                     missing_slots=["student_id_or_cohort"],
                 ))
 
-            if known_major and not known_cohort and not known_student:
-                # Do NOT ask for course code — must have cohort before answering course questions.
-                reply = f"OK bạn học ngành {memory.last_major.upper()}. Giờ bạn cho mình biết bạn khóa bao nhiêu? (K21/K22/K23/K24)?"
+            # Case B: Has student_id → full identity → ask what they need
+            if known_student and not (known_cohort and known_major):
                 return self._build_response(self._build_onboarding_response(
-                    reply,
-                    student_id=student_id,
-                    cohort=explicit_cohort,
+                    f"OK, mình đã ghi nhận MSSV: {memory.last_student_id.upper()}. "
+                    "Bạn cần mình hỗ trợ gì?",
+                    student_id=memory.last_student_id,
+                    cohort=memory.last_cohort,
                     major=memory.last_major,
-                    missing_slots=["student_id_or_cohort"],
+                    missing_slots=[],
                 ))
 
-            if known_cohort and not known_major and not known_student:
-                reply = f"Mình đã ghi nhận bạn học {memory.last_cohort.upper()}. Bạn đang học ngành nào? (NE/CE/CS/DS) để mình tư vấn đúng chương trình nhé."
+            # Case C: Only major known → acknowledge + ask for cohort
+            if known_major and not known_cohort and not known_student:
                 return self._build_response(self._build_onboarding_response(
-                    reply,
+                    f"OK mình đã ghi nhận bạn học ngành {memory.last_major.upper()}. "
+                    "Giờ bạn cho mình biết bạn khóa bao nhiêu? (K21/K22/K23/K24)?",
+                    student_id=student_id,
+                    cohort=None,
+                    major=memory.last_major,
+                    missing_slots=["cohort"],
+                ))
+
+            # Case D: Only cohort known → acknowledge + ask for major
+            if known_cohort and not known_major and not known_student:
+                return self._build_response(self._build_onboarding_response(
+                    f"Mình đã ghi nhận bạn học Khóa {memory.last_cohort.upper()}. "
+                    "Bạn đang học ngành nào? (NE/CE/CS/DS) để mình tư vấn đúng chương trình nhé.",
                     student_id=student_id,
                     cohort=memory.last_cohort,
-                    major=explicit_major,
+                    major=None,
                     missing_slots=["major"],
                 ))
 
-            # Has some identity info but processor still couldn't handle it
-            # → fall through to generic unknown response
+            # Case E: Has partial (cohort but not major, or vice versa) + asking about course
+            # → acknowledge what we know, ask for what we need
+            has_partial = (known_cohort and not known_major) or (known_major and not known_cohort)
+            if has_partial:
+                lower_msg = payload.message.lower()
+                asking_about_course = any(kw in lower_msg for kw in (
+                    "môn ", "về môn", "tiên quyết", "prerequisite", "info", "thông tin",
+                    "là gì", "giới thiệu", "eligible", "drop", "đăng ký", "register",
+                    "hỏi", "tra ", "xem ", "tìm hiểu", "học được không",
+                    "muốn học", "học oop", "muốn hỏi",
+                    "oop", " ai ", " ml ", " os ",
+                    "cần học gì trước", "học gì trước", "học được không",
+                    "tư vấn môn", "tư vấn về", "học gì", "môn nào",
+                    "operating system", "thuật toán", "cấu trúc dữ liệu",
+                    "machine learning", "data structures",
+                ))
+                if asking_about_course:
+                    if known_major and not known_cohort:
+                        return self._build_response(self._build_onboarding_response(
+                            f"OK mình đã ghi nhận bạn học ngành {memory.last_major.upper()}. "
+                            "Giờ bạn cho mình biết bạn khóa bao nhiêu? (K21/K22/K23/K24)?",
+                            student_id=student_id,
+                            cohort=None,
+                            major=memory.last_major,
+                            missing_slots=["cohort"],
+                        ))
+                    if known_cohort and not known_major:
+                        return self._build_response(self._build_onboarding_response(
+                            f"Mình đã ghi nhận bạn học Khóa {memory.last_cohort.upper()}. "
+                            "Bạn đang học ngành nào? (NE/CE/CS/DS) để mình tư vấn đúng chương trình nhé.",
+                            student_id=student_id,
+                            cohort=memory.last_cohort,
+                            major=None,
+                            missing_slots=["major"],
+                        ))
 
         # ================================================================
-        # STEP 7: Override IDENTITY_ACKNOWLEDGED if user also asked about a course
-        # Handle cases like "cho mình hỏi về OOP với mssv X"
-        # Only override if identity is COMPLETE (student_id OR both cohort+major).
+        # STEP 10: Override IDENTITY_ACKNOWLEDGED when user also asked a course question
+        # e.g. "cho mình hỏi về OOP với mssv X"
+        # Only proceeds if identity is COMPLETE (student_id OR cohort+major).
         # ================================================================
         if result.get("intent") == "IDENTITY_ACKNOWLEDGED" and result.get("missing_slots") == ["course_code"]:
             lower_msg = payload.message.lower()
@@ -353,56 +472,36 @@ class ChatService:
                 "machine learning", "data structures",
             ))
             if asking_about_course:
-                # Check identity completeness: student_id OR (cohort AND major)
+                # Identity completeness check: student_id OR (cohort AND major)
                 has_student_id = bool(result_slots.get("student_id"))
                 has_cohort = bool(result_slots.get("cohort"))
                 has_major = bool(result_slots.get("major"))
                 has_identity_complete = has_student_id or (has_cohort and has_major)
-                if not has_identity_complete:
-                    # Identity incomplete — do NOT override, let ONBOARDING handle it
-                    return self._build_response(result)
-            lower_msg = payload.message.lower()
-            asking_about_course = any(kw in lower_msg for kw in (
-                "môn ", "về môn", "tiên quyết", "prerequisite", "info", "thông tin",
-                "là gì", "giới thiệu", "eligible", "drop", "đăng ký", "register",
-                "hỏi", "tra ", "xem ", "tìm hiểu", "học được không",
-                "muốn học", "học oop", "muốn hỏi",
-                "oop", " ai ", " ml ", " os ",
-                "cần học gì trước", "học gì trước", "học được không",
-                "tư vấn môn", "tư vấn về", "học gì", "môn nào",
-                "operating system", "thuật toán", "cấu trúc dữ liệu",
-                "machine learning", "data structures",
-            ))
-            if asking_about_course:
-                # User provided identity AND asked about a course.
-                # Re-process with the current message to get the course answer.
-                reprocessed = parse_command(
-                    payload.message,
-                    student_id=payload.student_id,
-                    last_course_code=memory.last_course_code if memory else None,
-                )
-                reprocessed_slots = reprocessed.setdefault("slots", {})
-                # Get identity from result slots (from the memory block) or fallback to result slots
-                identity_slots = result_slots if memory else result.get("slots", {})
-                reprocessed_slots["cohort"] = identity_slots.get("cohort") or identity_slots.get("cohort_from_student_id")
-                reprocessed_slots["major"] = identity_slots.get("major") or identity_slots.get("major_from_student_id")
-                reprocessed_slots["student_id"] = identity_slots.get("student_id")
-                reprocessed_slots["semester_code"] = identity_slots.get("semester_code")
-                # Clear course_code if it was set to a student ID (e.g. "ITCEIU24001")
-                # This happens when the user says "cho mình hỏi mssv ITCEIU24001" and the processor
-                # misinterprets the student ID as a course code.
-                extracted_code = identity_slots.get("course_code")
-                if extracted_code and STUDENT_ID_PATTERN.search(extracted_code.upper()):
-                    extracted_code = None
-                reprocessed_slots["course_code"] = extracted_code
-                reprocessed["slots"] = reprocessed_slots
-                course_result = self.processor.process(reprocessed)
-                # Ensure student_id is preserved in the response slots
-                course_result_slots = course_result.setdefault("slots", {})
-                # Get student_id from parsed slots (set by parse_command with student_id=payload.student_id)
-                parsed_student_id = parsed.get("slots", {}).get("student_id")
-                if parsed_student_id:
-                    course_result_slots["student_id"] = parsed_student_id
-                return self._build_response(course_result)
+
+                if has_identity_complete:
+                    # Re-process to get the course answer
+                    reprocessed = parse_command(
+                        payload.message,
+                        student_id=payload.student_id,
+                        last_course_code=memory.last_course_code if memory else None,
+                    )
+                    reprocessed_slots = reprocessed.setdefault("slots", {})
+                    identity_slots = result_slots if memory else result.get("slots", {})
+                    reprocessed_slots["cohort"] = identity_slots.get("cohort") or identity_slots.get("cohort_from_student_id")
+                    reprocessed_slots["major"] = identity_slots.get("major") or identity_slots.get("major_from_student_id")
+                    reprocessed_slots["student_id"] = identity_slots.get("student_id")
+                    reprocessed_slots["semester_code"] = identity_slots.get("semester_code")
+                    extracted_code = identity_slots.get("course_code")
+                    if extracted_code and STUDENT_ID_PATTERN.search(extracted_code.upper()):
+                        extracted_code = None
+                    reprocessed_slots["course_code"] = extracted_code
+                    reprocessed["slots"] = reprocessed_slots
+                    course_result = self.processor.process(reprocessed)
+                    course_result_slots = course_result.setdefault("slots", {})
+                    parsed_student_id = parsed.get("slots", {}).get("student_id")
+                    if parsed_student_id:
+                        course_result_slots["student_id"] = parsed_student_id
+                    return self._build_response(course_result)
+                # Identity incomplete — fall through; let the partial identity block above handle it
 
         return self._build_response(result)

@@ -61,7 +61,7 @@ class CommandProcessor:
                 "môn ", "về môn", "tiên quyết", "prerequisite", "info", "thông tin",
                 "là gì", "giới thiệu", "eligible", "drop", "đăng ký", "register",
                 "tra ", "xem ", "tìm hiểu", "học được không",
-                "muốn học", "học oop",
+                "muốn học", "học oop", "muốn hỏi", "tư vấn",
                 "oop", " ai ", " ml ", " os ", "os được",
                 "cần học gì trước", "học gì trước", "học được không",
                 "tư vấn môn", "tư vấn về", "học gì", "môn nào",
@@ -72,7 +72,7 @@ class CommandProcessor:
             # CASE A: User is asking about a course
             if asking_about_course:
                 if not has_identity_complete:
-                    # Identity incomplete → onboarding
+                    # Identity incomplete → ask for identity FIRST before answering any course question
                     reply = "Bạn cho mình biết MSSV, hoặc tên ngành (NE/CE/CS/DS) và khóa (K21/K22/K23/K24) để mình tư vấn đúng chương trình nhé."
                     return self._build_response(
                         intent="ONBOARDING",
@@ -83,8 +83,26 @@ class CommandProcessor:
                         follow_up_question=reply,
                         data=None,
                     )
-                # Identity complete → let course alias resolution (below) handle it
-                # by NOT returning here; fall through
+                # Identity complete → resolve course by name/alias, then route
+                major = slots.get("major") or "cs"
+                cohort = slots.get("cohort") or slots.get("cohort_from_student_id") or "k23"
+                resolved = self.curriculum_service.resolve_course_by_name(
+                    major=major, cohort=cohort, user_text=text,
+                )
+                course_code = None
+                if resolved:
+                    resolved_code = str(resolved.get("course_code", "")).upper()
+                    slots = dict(slots)
+                    slots["course_code"] = resolved_code
+                    course_code = resolved_code
+                if course_code:
+                    if any(kw in lower_text for kw in ("tiên quyết", "prerequisite", "must pass", "cần pass", "bắt buộc trước")):
+                        return self._handle_prerequisite_only(text=text, slots=slots, course_code=course_code)
+                    if any(kw in lower_text for kw in ("học trước", "previous", "đã học", "học rồi")):
+                        return self._handle_previous_only(text=text, slots=slots, course_code=course_code)
+                    return self._handle_course_eligibility(text=text, slots=slots, course_code=course_code)
+                # Course code unresolved → ask user
+                return self._handle_missing_course_slot(intent=ASK_COURSE_REQUIREMENTS, slots=slots, text=text)
 
             # CASE B: User only provided identity (no course question)
             # Skip this block if user is asking about a course — let alias resolution handle it
@@ -239,7 +257,7 @@ class CommandProcessor:
                 "môn ", "về môn", "tiên quyết", "prerequisite", "info", "thông tin",
                 "là gì", "giới thiệu", "eligible", "drop", "đăng ký", "register",
                 "hỏi", "tra ", "xem ", "tìm hiểu", "học được không",
-                "muốn học", "học oop", "muốn hỏi",
+                "muốn học", "học oop", "muốn hỏi", "tư vấn",
                 "oop", " ai ", " ml ", " os ", "os được",
                 "cần học gì trước", "học gì trước", "học được không",
                 "tư vấn môn", "tư vấn về", "học gì", "môn nào",
